@@ -58,5 +58,12 @@ namespace Dapper
             var prop = _propertySelector(_type, columnName);
             return prop != null ? new SimpleMemberMap(columnName, prop) : null;
         }
+
+        /// <summary>
+        /// Not implemented as this typemap does not support reverse mapping
+        /// </summary>
+        /// <param name="memberName"></param>
+        /// <returns></returns>
+        public string GetColumnName(string memberName) => memberName;
     }
 }

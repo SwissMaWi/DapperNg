@@ -190,6 +190,14 @@ namespace Dapper
 
             return null;
         }
+
+        /// <summary>
+        /// Not implemented as this typemap does not support reverse mapping
+        /// </summary>
+        /// <param name="memberName"></param>
+        /// <returns></returns>
+        public string GetColumnName(string memberName) => memberName;
+
         /// <summary>
         /// Should column names like User_Id be allowed to match properties/fields like UserId ?
         /// </summary>

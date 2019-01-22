@@ -34,6 +34,11 @@ namespace Dapper
             /// Target constructor parameter
             /// </summary>
             ParameterInfo Parameter { get; }
+
+            /// <summary>
+            /// Name of the member (either of property, parameter or field)
+            /// </summary>
+            string MemberName { get; }
         }
     }
 }

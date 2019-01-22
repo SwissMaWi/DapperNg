@@ -29,7 +29,7 @@ namespace Dapper.Tests.Contrib
         public static string ConnectionString =>
             IsAppVeyor
                 ? @"Server=(local)\SQL2016;Database=tempdb;User ID=sa;Password=Password12!"
-                : $"Data Source=.;Initial Catalog={DbName};Integrated Security=True";
+                : $"Server=PRODEV8\\SQL2016;Database={DbName};Trusted_Connection=True;";
         public override IDbConnection GetConnection() => new SqlConnection(ConnectionString);
 
         static SqlServerTestSuite()

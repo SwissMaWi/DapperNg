@@ -178,15 +178,16 @@ namespace Dapper.Contrib.Extensions
 
             if (!GetQueries.TryGetValue(type.TypeHandle, out string sql))
             {
-                var key = GetSingleKey<T>(nameof(Get));
-                var name = GetTableName(type);
+                    var key = GetSingleKey<T>(nameof(Get));
+                    var keyColumnName = GetColumnName(type, key.Name);
+                    var name = GetTableName(type);
 
-                sql = $"select * from {name} where {key.Name} = @id";
-                GetQueries[type.TypeHandle] = sql;
+                    sql = $"select * from {name} where {keyColumnName} = @id";
+                    GetQueries[type.TypeHandle] = sql;
             }
 
             var dynParms = new DynamicParameters();
-            dynParms.Add("@id", id);
+                dynParms.Add("@id", id);
 
             T obj;
 
@@ -280,6 +281,12 @@ namespace Dapper.Contrib.Extensions
         /// </summary>
         public static TableNameMapperDelegate TableNameMapper;
 
+        private static string GetColumnName(Type type, string propertyName)
+        {
+            var typeMap = SqlMapper.GetTypeMap(type);
+            return typeMap.GetColumnName(propertyName);
+        }
+
         private static string GetTableName(Type type)
         {
             if (TypeTableName.TryGetValue(type.TypeHandle, out string name)) return name;
@@ -362,7 +369,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < allPropertiesExceptKeyAndComputed.Count; i++)
             {
                 var property = allPropertiesExceptKeyAndComputed[i];
-                adapter.AppendColumnName(sbColumnList, property.Name);  //fix for issue #336
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnName(sbColumnList, columnName);  //fix for issue #336
                 if (i < allPropertiesExceptKeyAndComputed.Count - 1)
                     sbColumnList.Append(", ");
             }
@@ -450,7 +458,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < nonIdProps.Count; i++)
             {
                 var property = nonIdProps[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);  //fix for issue #336
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < nonIdProps.Count - 1)
                     sb.Append(", ");
             }
@@ -458,7 +467,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < keyProperties.Count; i++)
             {
                 var property = keyProperties[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);  //fix for issue #336
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < keyProperties.Count - 1)
                     sb.Append(" and ");
             }
@@ -515,7 +525,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < keyProperties.Count; i++)
             {
                 var property = keyProperties[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);  //fix for issue #336
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < keyProperties.Count - 1)
                     sb.Append(" and ");
             }
@@ -804,7 +815,8 @@ public partial interface ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    void AppendColumnNameEqualsValue(StringBuilder sb, string columnName);
+    /// <param name="parameterName">The parameter name.</param>
+    void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName);
 }
 
 /// <summary>
@@ -857,9 +869,10 @@ public partial class SqlServerAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("[{0}] = @{1}", columnName, columnName);
+        sb.AppendFormat("[{0}] = @{1}", columnName, parameterName);
     }
 }
 
@@ -913,9 +926,10 @@ public partial class SqlCeServerAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("[{0}] = @{1}", columnName, columnName);
+        sb.AppendFormat("[{0}] = @{1}", columnName, parameterName);
     }
 }
 
@@ -968,9 +982,10 @@ public partial class MySqlAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("`{0}` = @{1}", columnName, columnName);
+        sb.AppendFormat("`{0}` = @{1}", columnName, parameterName);
     }
 }
 
@@ -1044,9 +1059,10 @@ public partial class PostgresAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("\"{0}\" = @{1}", columnName, columnName);
+        sb.AppendFormat("\"{0}\" = @{1}", columnName, parameterName);
     }
 }
 
@@ -1097,9 +1113,10 @@ public partial class SQLiteAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("\"{0}\" = @{1}", columnName, columnName);
+        sb.AppendFormat("\"{0}\" = @{1}", columnName, parameterName);
     }
 }
 
@@ -1154,8 +1171,9 @@ public partial class FbAdapter : ISqlAdapter
     /// </summary>
     /// <param name="sb">The string builder  to append to.</param>
     /// <param name="columnName">The column name.</param>
-    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName)
+    /// <param name="parameterName">The parameter name.</param>
+    public void AppendColumnNameEqualsValue(StringBuilder sb, string columnName, string parameterName)
     {
-        sb.AppendFormat("{0} = @{1}", columnName, columnName);
+        sb.AppendFormat("{0} = @{1}", columnName, parameterName);
     }
 }

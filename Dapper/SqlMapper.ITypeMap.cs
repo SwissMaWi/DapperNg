@@ -41,6 +41,13 @@ namespace Dapper
             /// <param name="columnName">DataReader column name</param>
             /// <returns>Mapping implementation</returns>
             IMemberMap GetMember(string columnName);
+
+            /// <summary>
+            /// Gets column mapping for member
+            /// </summary>
+            /// <param name="memberName">Member name</param>
+            /// <returns>Column name corresponding to member name</returns>
+            string GetColumnName(string memberName);
         }
     }
 }

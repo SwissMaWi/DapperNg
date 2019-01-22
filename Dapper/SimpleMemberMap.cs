@@ -65,5 +65,19 @@ namespace Dapper
         /// Target constructor parameter
         /// </summary>
         public ParameterInfo Parameter { get; }
+
+        /// <summary>
+        /// Name of member (either of property, parameter or field)
+        /// </summary>
+        public string MemberName
+        {
+            get
+            {
+                if (Property != null) return Property.Name;
+                if (Parameter != null) return Parameter.Name;
+                if (Field != null) return Field.Name;
+                return null;
+            }
+        }
     }
 }

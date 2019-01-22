@@ -27,11 +27,12 @@ namespace Dapper.Contrib.Extensions
             var type = typeof(T);
             if (!GetQueries.TryGetValue(type.TypeHandle, out string sql))
             {
-                var key = GetSingleKey<T>(nameof(GetAsync));
-                var name = GetTableName(type);
+                    var key = GetSingleKey<T>(nameof(Get));
+                    var keyColumnName = GetColumnName(type, key.Name);
+                    var name = GetTableName(type);
 
-                sql = $"SELECT * FROM {name} WHERE {key.Name} = @id";
-                GetQueries[type.TypeHandle] = sql;
+                    sql = $"select * from {name} where {keyColumnName} = @id";
+                    GetQueries[type.TypeHandle] = sql;
             }
 
             var dynParms = new DynamicParameters();
@@ -169,10 +170,13 @@ namespace Dapper.Contrib.Extensions
             var computedProperties = ComputedPropertiesCache(type);
             var allPropertiesExceptKeyAndComputed = allProperties.Except(keyProperties.Union(computedProperties)).ToList();
 
+            var adapter = GetFormatter(connection);
+
             for (var i = 0; i < allPropertiesExceptKeyAndComputed.Count; i++)
             {
                 var property = allPropertiesExceptKeyAndComputed[i];
-                sqlAdapter.AppendColumnName(sbColumnList, property.Name);
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnName(sbColumnList, columnName);  //fix for issue #336
                 if (i < allPropertiesExceptKeyAndComputed.Count - 1)
                     sbColumnList.Append(", ");
             }
@@ -252,7 +256,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < nonIdProps.Count; i++)
             {
                 var property = nonIdProps[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < nonIdProps.Count - 1)
                     sb.Append(", ");
             }
@@ -260,7 +265,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < keyProperties.Count; i++)
             {
                 var property = keyProperties[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < keyProperties.Count - 1)
                     sb.Append(" and ");
             }
@@ -317,7 +323,8 @@ namespace Dapper.Contrib.Extensions
             for (var i = 0; i < keyProperties.Count; i++)
             {
                 var property = keyProperties[i];
-                adapter.AppendColumnNameEqualsValue(sb, property.Name);
+                var columnName = GetColumnName(type, property.Name);
+                adapter.AppendColumnNameEqualsValue(sb, columnName, property.Name);  //fix for issue #336
                 if (i < keyProperties.Count - 1)
                     sb.Append(" AND ");
             }
